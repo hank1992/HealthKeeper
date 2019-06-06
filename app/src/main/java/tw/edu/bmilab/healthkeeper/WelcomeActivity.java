@@ -1,9 +1,14 @@
 package tw.edu.bmilab.healthkeeper;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -29,13 +34,20 @@ public class WelcomeActivity extends AppCompatActivity {
     private String timestamp;
     private int amount;
     private boolean sex;
-
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    //Notification
+    private static final String PRIMARY_CHANNEL_ID = "primary_notification_channel";
+    private NotificationManager mNotifyManager;
+    private static final int NOTIFICATION_ID = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
+
+        createNotificationChannel();
 
         textView_status = findViewById(R.id.textView_status);
         textView_amount = findViewById(R.id.textView_amount);
@@ -45,6 +57,8 @@ public class WelcomeActivity extends AppCompatActivity {
         DH = new SQLdata(this);
         db = DH.getWritableDatabase();
         queryDB();
+
+
     }
 
     private void add(int amount, int sex) {
@@ -63,6 +77,7 @@ public class WelcomeActivity extends AppCompatActivity {
         String sql2 = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + twoDayAgo + "' AND '" + oneDayAgo + "' ORDER BY Timestamp DESC";
 
         if (db.rawQuery(sql, null).moveToFirst()) {
+            //24hr內有吃藥
             timestamp = cursor.getString(0);
             amount = cursor.getInt(1);
             if (cursor.getInt(2) == 1) {
@@ -71,19 +86,21 @@ public class WelcomeActivity extends AppCompatActivity {
                 sex = false;
             }
             textView_remark.setText("Last drug taken at " + timestamp);
-            textView_status.setText("You are in Low Risk");
+            textView_status.setText("You are at Low Risk");
             textView_status.setTextColor(Color.GREEN);
-            //1小時前才可吃藥
-            if (LocalDateTime.parse(timestamp).minusHours(1L).isBefore(LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).toLocalDateTime())) {
+
+            //2小時前才可吃藥
+            if (LocalDateTime.parse(timestamp).plusDays(1L).minusHours(2L).isBefore(LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).toLocalDateTime())) {
                 textView_amount.setText("1");
                 textView_remark.setText("Take the drug before UTC+8 " + LocalDateTime.parse(timestamp).plusDays(1L).toString());
             } else {
                 textView_amount.setVisibility(View.INVISIBLE);
                 button_taken.setText("Not yet");
                 button_taken.setEnabled(false);
-                textView_remark.setText("Come back to take the drug at UTC+8 " + LocalDateTime.parse(timestamp).plusDays(1L).minusHours(1L).toString());
+                textView_remark.setText("Come back to take the drug at UTC+8 " + LocalDateTime.parse(timestamp).plusDays(1L).minusHours(2L).toString());
             }
         } else if (db.rawQuery(sql2, null).moveToFirst()) {
+            //前48-24hr內有吃藥->補吃2顆?
             timestamp = cursor.getString(0);
             amount = cursor.getInt(1);
             if (cursor.getInt(2) == 1) {
@@ -91,11 +108,55 @@ public class WelcomeActivity extends AppCompatActivity {
             } else {
                 sex = false;
             }
+            textView_status.setText("You are at High risk");
+            textView_status.setTextColor(Color.RED);
+            textView_remark.setText("Last drug taken at UTC+8 " + timestamp);
+            textView_amount.setText("2");
         } else {
             textView_remark.setText("No drug taken within 48 hr.");
-            textView_status.setText("You are in High risk");
+            textView_status.setText("You are at High risk");
             textView_status.setTextColor(Color.RED);
             textView_amount.setText("2");
+            sendNotification();
         }
     }
+
+    public void sendNotification() {
+        NotificationCompat.Builder notifyBuilder = getNotificationBuilder();
+        mNotifyManager.notify(NOTIFICATION_ID, notifyBuilder.build());
+    }
+
+    public void createNotificationChannel() {
+        mNotifyManager = (NotificationManager)
+                getSystemService(NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >=
+                android.os.Build.VERSION_CODES.O) {
+            // Create a NotificationChannel
+            NotificationChannel notificationChannel = new NotificationChannel(PRIMARY_CHANNEL_ID,
+                    "Prep Notification", NotificationManager
+                    .IMPORTANCE_HIGH);
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.RED);
+            notificationChannel.enableVibration(true);
+            notificationChannel.setDescription("Time to take drug");
+            mNotifyManager.createNotificationChannel(notificationChannel);
+        }
+    }
+
+    private NotificationCompat.Builder getNotificationBuilder() {
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent notificationPendingIntent = PendingIntent.getActivity(this,
+                NOTIFICATION_ID, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        NotificationCompat.Builder notifyBuilder = new NotificationCompat.Builder(this, PRIMARY_CHANNEL_ID)
+                .setContentTitle("It's time")
+                .setContentText("Time to take drug")
+                .setSmallIcon(R.drawable.ic_stat_name)
+                .setContentIntent(notificationPendingIntent)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setDefaults(NotificationCompat.DEFAULT_ALL);
+        return notifyBuilder;
+    }
+
+
 }

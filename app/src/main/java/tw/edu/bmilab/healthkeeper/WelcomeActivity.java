@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -75,17 +76,18 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
     private void queryDB() {
+        String remark = "";
         String now = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).format(formatter);
         String oneDayAgo = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).minusDays(1L).format(formatter);
         String twoDayAgo = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).minusDays(2L).format(formatter);
         String sql = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + oneDayAgo + "' AND '" + now + "' ORDER BY Timestamp DESC";
         String sql2 = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + twoDayAgo + "' AND '" + oneDayAgo + "' ORDER BY Timestamp DESC";
-
-        if (db.rawQuery(sql, null).moveToFirst()) {
+        cursor = db.rawQuery(sql, null);
+        if (cursor.moveToFirst()) {
             //24hr內有吃藥
             timestamp = cursor.getString(1);
-            amount = cursor.getInt(1);
-            if (cursor.getInt(2) == 1) {
+            amount = cursor.getInt(2);
+            if (cursor.getInt(3) == 1) {
                 sex = true;
             } else {
                 sex = false;
@@ -95,20 +97,23 @@ public class WelcomeActivity extends AppCompatActivity {
             textView_status.setTextColor(Color.GREEN);
 
             //2小時前才可吃藥
-            if (LocalDateTime.parse(timestamp).plusDays(1L).minusHours(2L).isBefore(LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).toLocalDateTime())) {
+            if (LocalDateTime.parse(timestamp, formatter).plusDays(1L).minusHours(2L).isBefore(LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).toLocalDateTime())) {
                 textView_amount.setText("1");
-                textView_remark.setText("Take the drug before UTC+8 " + LocalDateTime.parse(timestamp).plusDays(1L).toString());
+                remark += "Take the drug before UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).format(formatter) + "\n\n";
             } else {
                 textView_amount.setVisibility(View.INVISIBLE);
                 button_taken.setText("Not yet");
                 button_taken.setEnabled(false);
-                textView_remark.setText("Come back to take the drug at UTC+8 " + LocalDateTime.parse(timestamp).plusDays(1L).minusHours(2L).toString());
+                remark += "Come back to take the drug at UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).minusHours(2L).format(formatter) + "\n\n";
             }
+            remark += "Last time you take drug at UTC+8 " + LocalDateTime.parse(timestamp, formatter).format(formatter) + "\n\n";
+            textView_remark.setText(remark);
+            textView_remark.setTextColor(Color.BLUE);
         } else if (db.rawQuery(sql2, null).moveToFirst()) {
             //前48-24hr內有吃藥->補吃2顆?
-            timestamp = cursor.getString(0);
-            amount = cursor.getInt(1);
-            if (cursor.getInt(2) == 1) {
+            timestamp = cursor.getString(1);
+            amount = cursor.getInt(2);
+            if (cursor.getInt(3) == 1) {
                 sex = true;
             } else {
                 sex = false;
@@ -164,4 +169,17 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
 
+    private static final int TIME_INTERVAL = 2000; // # milliseconds, desired time passed between two back presses.
+    private long mBackPressed;
+
+    @Override
+    public void onBackPressed() {
+        if (mBackPressed + TIME_INTERVAL > System.currentTimeMillis()) {
+            super.onBackPressed();
+            return;
+        } else {
+            Toast.makeText(getBaseContext(), "Press back button again to exit", Toast.LENGTH_SHORT).show();
+        }
+        mBackPressed = System.currentTimeMillis();
+    }
 }

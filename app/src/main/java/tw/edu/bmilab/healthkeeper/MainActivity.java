@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
             gender = mPreferences.getString("gender",null);
             if (gender != null) {
                 Intent welcomeIntent = new Intent(this, WelcomeActivity.class);
+                this.finish();
                 startActivity(welcomeIntent);
             }
         }

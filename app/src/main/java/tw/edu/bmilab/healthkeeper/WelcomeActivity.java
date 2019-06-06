@@ -64,7 +64,7 @@ public class WelcomeActivity extends AppCompatActivity {
 
     public void takeDrug(View view) {
         add(Integer.parseInt(textView_amount.getText().toString()), 0);
-        view.setClickable(false);
+        view.setEnabled(false);
     }
 
     private void add(int amount, int sex) {

@@ -55,14 +55,16 @@
 
     <EditText
         android:id="@+id/editDate"
-        android:layout_width="281dp"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
         android:layout_weight="1"
+        android:digits="0,1,2,3,4,5,6,7,8,9,-"
+        app:layout_constraintEnd_toStartOf="@+id/btnDate"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView_DOB"
-        android:digits="0,1,2,3,4,5,6,7,8,9,-" />/>
+        app:layout_constraintTop_toBottomOf="@+id/textView_DOB" />/>
 
     <Button
         android:id="@+id/btnDate"
@@ -70,11 +72,9 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
         android:layout_weight="1"
         android:onClick="datePicker"
         android:text="挑選日期"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/editDate"
         app:layout_constraintTop_toBottomOf="@+id/textView_DOB" />
 

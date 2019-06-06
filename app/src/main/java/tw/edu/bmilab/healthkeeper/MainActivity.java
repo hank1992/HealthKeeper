@@ -14,6 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import java.util.Calendar;
 
@@ -33,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mPreferences = getSharedPreferences(sharedPrefFile, MODE_PRIVATE);
         if (mPreferences != null) {
-            gender = mPreferences.getString("gender",null);
+            gender = mPreferences.getString("gender", null);
             if (gender != null) {
                 Intent welcomeIntent = new Intent(this, WelcomeActivity.class);
                 this.finish();
@@ -104,12 +105,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClick(View view) {
+        String errCol = "";
+        if (gender.equals("")) {
+            errCol += "Please enter Gender\n";
+        }
+        if (DOB.getText().toString().equals("")) {
+            errCol += "Please enter DOB\n";
+        }
+        if (weight.getText().toString().equals("")) {
+            errCol += "Please enter Weight\n";
+        }
         SharedPreferences.Editor preferencesEditor = mPreferences.edit();
-        preferencesEditor.putString("gender", gender);
-        preferencesEditor.putString("DOB", DOB.getText().toString());
-        preferencesEditor.putFloat("weight", Float.parseFloat(weight.getText().toString()));
-        preferencesEditor.apply();
-        Intent welcomeIntent = new Intent(this, WelcomeActivity.class);
-        startActivity(welcomeIntent);
+        if (errCol.equals("")) {
+            preferencesEditor.putString("gender", gender);
+            preferencesEditor.putString("DOB", DOB.getText().toString());
+            try {
+                preferencesEditor.putFloat("weight", Float.parseFloat(weight.getText().toString()));
+            } catch (NumberFormatException Nfe) {
+                errCol += "Weight format exception\n";
+            }
+        }
+        if (errCol.equals("")) {
+            preferencesEditor.apply();
+            Intent welcomeIntent = new Intent(this, WelcomeActivity.class);
+            startActivity(welcomeIntent);
+        } else {
+            Toast.makeText(this, errCol, Toast.LENGTH_SHORT).show();
+        }
     }
 }

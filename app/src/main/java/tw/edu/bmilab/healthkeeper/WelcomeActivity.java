@@ -92,7 +92,6 @@ public class WelcomeActivity extends AppCompatActivity {
             } else {
                 sex = false;
             }
-            textView_remark.setText("Last drug taken at " + timestamp);
             textView_status.setText("You are at Low Risk");
             textView_status.setTextColor(Color.GREEN);
 
@@ -104,9 +103,9 @@ public class WelcomeActivity extends AppCompatActivity {
                 textView_amount.setVisibility(View.INVISIBLE);
                 button_taken.setText("Not yet");
                 button_taken.setEnabled(false);
-                remark += "Come back to take the drug at UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).minusHours(2L).format(formatter) + "\n\n";
+                remark += "Next dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).format(formatter) + "\n\n";
             }
-            remark += "Last time you take drug at UTC+8 " + LocalDateTime.parse(timestamp, formatter).format(formatter) + "\n\n";
+            remark += "Last dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).format(formatter) + "\n\n";
             textView_remark.setText(remark);
             textView_remark.setTextColor(Color.BLUE);
         } else if (db.rawQuery(sql2, null).moveToFirst()) {

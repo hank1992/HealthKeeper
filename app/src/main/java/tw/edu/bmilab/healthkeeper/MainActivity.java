@@ -14,6 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Calendar;
@@ -21,7 +22,7 @@ import java.util.Calendar;
 public class MainActivity extends AppCompatActivity {
 
     private String gender;
-    private EditText DOB;
+    private TextView DOB;
     private EditText weight;
     private SharedPreferences mPreferences;
     private String sharedPrefFile =
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        DOB = findViewById(R.id.editDate);
+        DOB = findViewById(R.id.textView_EditDOB);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

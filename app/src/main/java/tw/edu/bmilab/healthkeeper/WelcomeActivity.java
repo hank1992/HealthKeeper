@@ -61,12 +61,17 @@ public class WelcomeActivity extends AppCompatActivity {
 
     }
 
+    public void takeDrug(View view) {
+        add(Integer.parseInt(textView_amount.getText().toString()), 0);
+        view.setClickable(false);
+    }
+
     private void add(int amount, int sex) {
         values = new ContentValues();
         values.put("Timestamp", LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).format(formatter));
-//        values.put("Amount", );
-        values.put("Sex", LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).format(formatter));
-        db.insert("TB2018", null, values);
+        values.put("Amount", amount);
+        values.put("Sex", sex);
+        db.insert("Drug", null, values);
     }
 
     private void queryDB() {
@@ -78,7 +83,7 @@ public class WelcomeActivity extends AppCompatActivity {
 
         if (db.rawQuery(sql, null).moveToFirst()) {
             //24hr內有吃藥
-            timestamp = cursor.getString(0);
+            timestamp = cursor.getString(1);
             amount = cursor.getInt(1);
             if (cursor.getInt(2) == 1) {
                 sex = true;

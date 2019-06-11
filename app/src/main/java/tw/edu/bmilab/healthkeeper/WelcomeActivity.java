@@ -4,15 +4,14 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -20,42 +19,27 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-public class WelcomeActivity extends AppCompatActivity {
-    private TextView textView_status;
-    private TextView textView_amount;
-    private TextView textView_remark;
-    private Button button_taken;
-
-    //SQLite
-    SQLiteDatabase db;
-    ContentValues values;
-    Cursor cursor;
-    public SQLdata DH = null;
-    private String timestamp;
-    private int amount;
-    private boolean sex;
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+public class WelcomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+    private DrawerLayout drawer;
 
     //Notification
     private static final String PRIMARY_CHANNEL_ID = "primary_notification_channel";
     private NotificationManager mNotifyManager;
     private static final int NOTIFICATION_ID = 0;
 
+    //Fragment
+    private FrameLayout fragmentContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,86 +48,43 @@ public class WelcomeActivity extends AppCompatActivity {
 
         createNotificationChannel();
 
-        textView_status = findViewById(R.id.textView_status);
-        textView_amount = findViewById(R.id.textView_amount);
-        textView_remark = findViewById(R.id.textView_remark);
-        button_taken = findViewById(R.id.button_taken);
+        //Navigation drawer
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
-        DH = new SQLdata(this);
-        db = DH.getWritableDatabase();
-        queryDB();
+        drawer = findViewById(R.id.drawer_layout);
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
 
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
 
-    }
-
-    public void takeDrug(View view) {
-        add(Integer.parseInt(textView_amount.getText().toString()), 0);
-        view.setEnabled(false);
-        queryDB();
-    }
-
-    private void add(int amount, int sex) {
-        values = new ContentValues();
-        values.put("Timestamp", LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).format(formatter));
-        values.put("Amount", amount);
-        values.put("Sex", sex);
-        db.insert("Drug", null, values);
-    }
-
-    private void queryDB() {
-        String remark = "";
-        String now = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).format(formatter);
-        String oneDayAgo = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).minusDays(1L).format(formatter);
-        String twoDayAgo = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).minusDays(2L).format(formatter);
-        String sql = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + oneDayAgo + "' AND '" + now + "' ORDER BY Timestamp DESC";
-        String sql2 = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + twoDayAgo + "' AND '" + oneDayAgo + "' ORDER BY Timestamp DESC";
-        cursor = db.rawQuery(sql, null);
-        if (cursor.moveToFirst()) {
-            //24hr內有吃藥
-            timestamp = cursor.getString(1);
-            amount = cursor.getInt(2);
-            if (cursor.getInt(3) == 1) {
-                sex = true;
-            } else {
-                sex = false;
-            }
-            textView_status.setText("You are at Low Risk");
-            textView_status.setTextColor(Color.GREEN);
-
-            //2小時前才可吃藥
-            if (LocalDateTime.parse(timestamp, formatter).plusDays(1L).minusHours(2L).isBefore(LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).toLocalDateTime())) {
-                textView_amount.setText("1");
-                remark += "Take the drug before UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).format(formatter) + "\n\n";
-            } else {
-                textView_amount.setVisibility(View.INVISIBLE);
-                button_taken.setText("Not yet");
-                button_taken.setEnabled(false);
-                remark += "Next dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).format(formatter) + "\n\n";
-            }
-            remark += "Last dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).format(formatter) + "\n\n";
-            textView_remark.setText(remark);
-            textView_remark.setTextColor(Color.BLUE);
-        } else if (db.rawQuery(sql2, null).moveToFirst()) {
-            //前48-24hr內有吃藥->補吃2顆?
-            timestamp = cursor.getString(1);
-            amount = cursor.getInt(2);
-            if (cursor.getInt(3) == 1) {
-                sex = true;
-            } else {
-                sex = false;
-            }
-            textView_status.setText("You are at High risk");
-            textView_status.setTextColor(Color.RED);
-            textView_remark.setText("Last drug taken at UTC+8 " + timestamp);
-            textView_amount.setText("2");
-        } else {
-            textView_remark.setText("No drug taken within 48 hr.");
-            textView_status.setText("You are at High risk");
-            textView_status.setTextColor(Color.RED);
-            textView_amount.setText("2");
-            sendNotification();
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new DrugFragment()).commit();
+            navigationView.setCheckedItem(R.id.nav_view);
         }
+
+//        //Fragment
+//        fragmentContainer = findViewById(R.id.fragment_container);
+//        DrugFragment fragment = DrugFragment.newInstance();
+//        FragmentManager fragmentManager = getSupportFragmentManager();
+//        FragmentTransaction transaction = fragmentManager.beginTransaction();
+//        transaction.addToBackStack(null);
+//        transaction.add(R.id.fragment_container, fragment, "Drug Fragment").commit();
     }
+
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
+            case R.id.nav_drug:
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new DrugFragment()).commit();
+                break;
+        }
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
 
     public void sendNotification() {
         NotificationCompat.Builder notifyBuilder = getNotificationBuilder();
@@ -182,22 +123,23 @@ public class WelcomeActivity extends AppCompatActivity {
         return notifyBuilder;
     }
 
-
     private static final int TIME_INTERVAL = 2000; // # milliseconds, desired time passed between two back presses.
     private long mBackPressed;
 
     @Override
     public void onBackPressed() {
-
-
-        if (mBackPressed + TIME_INTERVAL > System.currentTimeMillis()) {
-            super.onBackPressed();
-            return;
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
         } else {
-            Toast.makeText(getBaseContext(), "Press back button again to exit", Toast.LENGTH_SHORT).show();
+            if (mBackPressed + TIME_INTERVAL > System.currentTimeMillis()) {
+                super.onBackPressed();
+                return;
+            } else {
+                Toast.makeText(getBaseContext(), "Press back button again to exit", Toast.LENGTH_SHORT).show();
+            }
+            mBackPressed = System.currentTimeMillis();
         }
-        mBackPressed = System.currentTimeMillis();
     }
 
-    
+
 }

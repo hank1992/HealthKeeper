@@ -1,14 +1,15 @@
 package tw.edu.bmilab.healthkeeper;
 
+import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.NotificationCompat;
@@ -99,7 +100,7 @@ public class DrugFragment extends Fragment {
         textView_status = view.findViewById(R.id.textView_status);
         textView_amount = view.findViewById(R.id.textView_amount);
         textView_remark = view.findViewById(R.id.textView_remark);
-        button_taken = view.findViewById(R.id.button_taken);
+        button_taken = view.findViewById(R.id.button_eval);
 
         DH = new SQLdata(getContext());
         db = DH.getWritableDatabase();
@@ -109,8 +110,38 @@ public class DrugFragment extends Fragment {
             @Override
             public void onClick(View view) {
 //                takeDrug("takeDrug");
+                new AlertDialog.Builder(getContext())
+                        .setMessage("Sex in past 24 hours?")
+                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                new AlertDialog.Builder(getContext())
+                                        .setMessage("Sex in next 24 hours?")
+                                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialogInterface, int i) {
+                                                textView_status.setText("Take medicine now and have fun 2 hours later.");
+                                                textView_amount.setText("2");
+                                            }
+                                        })
+                                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialogInterface, int i) {
+                                                textView_status.setText("No need to take medicine now.");
+                                                button_taken.setVisibility(View.INVISIBLE);
+                                                textView_remark.setVisibility(View.INVISIBLE);
+                                            }
+                                        }).show();
+                            }
+                        })
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                add(0, 1);
+                            }
+                        }).show();
                 add(Integer.parseInt(textView_amount.getText().toString()), 0);
-                view.setEnabled(false);
+//                view.setEnabled(false);
                 queryDB();
             }
         });
@@ -177,7 +208,7 @@ public class DrugFragment extends Fragment {
         String oneDayAgo = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).minusDays(1L).format(formatter);
         String twoDayAgo = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).minusDays(2L).format(formatter);
         String sql = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + oneDayAgo + "' AND '" + now + "' ORDER BY Timestamp DESC";
-        String sql2 = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + twoDayAgo + "' AND '" + oneDayAgo + "' ORDER BY Timestamp DESC";
+//        String sql2 = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + twoDayAgo + "' AND '" + oneDayAgo + "' ORDER BY Timestamp DESC";
         cursor = db.rawQuery(sql, null);
         if (cursor.moveToFirst()) {
             //24hr內有吃藥
@@ -204,25 +235,13 @@ public class DrugFragment extends Fragment {
             remark += "Last dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).format(formatter) + "\n\n";
             textView_remark.setText(remark);
             textView_remark.setTextColor(Color.BLUE);
-        } else if (db.rawQuery(sql2, null).moveToFirst()) {
-            //前48-24hr內有吃藥->補吃2顆?
-            timestamp = cursor.getString(1);
-            amount = cursor.getInt(2);
-            if (cursor.getInt(3) == 1) {
-                sex = true;
-            } else {
-                sex = false;
-            }
-            textView_status.setText("You are at High risk");
-            textView_status.setTextColor(Color.RED);
-            textView_remark.setText("Last drug taken at UTC+8 " + timestamp);
-            textView_amount.setText("2");
         } else {
-            textView_remark.setText("No drug taken within 48 hr.");
-            textView_status.setText("You are at High risk");
+            textView_remark.setText("No drug taken within 24 hr.");
+            textView_status.setText("You are not on PrEP");
             textView_status.setTextColor(Color.RED);
-            textView_amount.setText("2");
-            sendNotification();
+            textView_amount.setVisibility(View.INVISIBLE);
+            button_taken.setText("Should I take medicine?");
+//            sendNotification();
         }
     }
 
@@ -242,4 +261,5 @@ public class DrugFragment extends Fragment {
                 getContext().getSystemService(NOTIFICATION_SERVICE);
         mNotifyManager.notify(NOTIFICATION_ID, notifyBuilder.build());
     }
+
 }

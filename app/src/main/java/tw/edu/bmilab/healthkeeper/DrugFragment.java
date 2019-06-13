@@ -51,7 +51,8 @@ public class DrugFragment extends Fragment {
     private TextView textView_status;
     private TextView textView_amount;
     private TextView textView_remark;
-    private Button button_taken;
+    private Button button_eval;
+    private Button button_takeNow;
 
     //Notification
     private static final String PRIMARY_CHANNEL_ID = "primary_notification_channel";
@@ -65,7 +66,9 @@ public class DrugFragment extends Fragment {
     public SQLdata DH = null;
     private String timestamp;
     private int amount;
-    private boolean sex;
+    private int sex = 2;
+    //0 無 1有 2不適用
+    private String remark = "";
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private OnFragmentInteractionListener mListener;
@@ -99,49 +102,109 @@ public class DrugFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_drug, container, false);
         textView_status = view.findViewById(R.id.textView_status);
         textView_amount = view.findViewById(R.id.textView_amount);
+        textView_amount.setVisibility(View.INVISIBLE);
         textView_remark = view.findViewById(R.id.textView_remark);
-        button_taken = view.findViewById(R.id.button_eval);
+        button_eval = view.findViewById(R.id.button_eval);
+        button_takeNow = view.findViewById(R.id.button_takeNow);
+        button_takeNow.setVisibility(View.INVISIBLE);
 
         DH = new SQLdata(getContext());
         db = DH.getWritableDatabase();
         queryDB();
 
-        button_taken.setOnClickListener(new View.OnClickListener() {
+        button_takeNow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                add(Integer.parseInt(textView_amount.getText().toString()), sex);
+                queryDB();
+                button_takeNow.setEnabled(false);
+                button_eval.setVisibility(View.INVISIBLE);
+            }
+        });
+
+        button_eval.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                takeDrug("takeDrug");
-                new AlertDialog.Builder(getContext())
-                        .setMessage("Sex in past 24 hours?")
-                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                new AlertDialog.Builder(getContext())
-                                        .setMessage("Sex in next 24 hours?")
-                                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                                            @Override
-                                            public void onClick(DialogInterface dialogInterface, int i) {
-                                                textView_status.setText("Take medicine now and have fun 2 hours later.");
-                                                textView_amount.setText("2");
-                                            }
-                                        })
-                                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                                            @Override
-                                            public void onClick(DialogInterface dialogInterface, int i) {
-                                                textView_status.setText("No need to take medicine now.");
-                                                button_taken.setVisibility(View.INVISIBLE);
-                                                textView_remark.setVisibility(View.INVISIBLE);
-                                            }
-                                        }).show();
-                            }
-                        })
-                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                add(0, 1);
-                            }
-                        }).show();
-                add(Integer.parseInt(textView_amount.getText().toString()), 0);
-//                view.setEnabled(false);
+                if (textView_status.getText().toString().equals("You are not on PrEP yet") ||
+                        textView_status.getText().toString().equals("No need to take medicine now") ||
+                        textView_status.getText().toString().equals("Take medicine now and have fun 2 hours later")) {
+                    new AlertDialog.Builder(getContext())
+                            .setMessage("Sex in the next 24 hours?")
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    textView_status.setText("Take medicine now and have fun 2 hours later");
+                                    textView_amount.setText("2");
+                                    textView_amount.setVisibility(View.VISIBLE);
+                                    button_takeNow.setVisibility(View.VISIBLE);
+//                                    sex = true;
+                                }
+                            })
+                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    textView_status.setText("No need to take medicine now");
+                                    textView_amount.setVisibility(View.INVISIBLE);
+                                    button_takeNow.setVisibility(View.INVISIBLE);
+//                                                textView_remark.setVisibility(View.INVISIBLE);
+//                                    sex = false;
+                                }
+                            }).show();
+                } else {
+                    new AlertDialog.Builder(getContext())
+                            .setMessage("Sex in the past 24 hours?")
+                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    new AlertDialog.Builder(getContext())
+                                            .setMessage("Sex in the next 24 hours?")
+                                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialogInterface, int i) {
+                                                    textView_status.setText("Take medicine now.");
+                                                    textView_amount.setText("1");
+                                                    textView_amount.setVisibility(View.VISIBLE);
+                                                    button_takeNow.setVisibility(View.VISIBLE);
+                                                    sex = 1;
+                                                }
+                                            })
+                                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialogInterface, int i) {
+                                                    textView_status.setText("PrEP end.");
+                                                    button_takeNow.setVisibility(View.INVISIBLE);
+//                                                textView_remark.setVisibility(View.INVISIBLE);
+                                                    sex = 0;
+                                                }
+                                            }).show();
+                                }
+                            })
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    sex = 1;
+                                    new AlertDialog.Builder(getContext())
+                                            .setMessage("Sex in the next 24 hours?")
+                                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialogInterface, int i) {
+                                                    textView_status.setText("Take medicine now.");
+                                                    textView_amount.setText("1");
+                                                    button_takeNow.setVisibility(View.VISIBLE);
+                                                }
+                                            })
+                                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialogInterface, int i) {
+                                                    textView_status.setText("Take medicine now.");
+                                                    button_takeNow.setVisibility(View.INVISIBLE);
+//                                                textView_remark.setVisibility(View.INVISIBLE);
+                                                    remark += "It's your last dose if no sex in the next 24hr.";
+                                                }
+                                            }).show();
+                                }
+                            }).show();
+                }
                 queryDB();
             }
         });
@@ -203,46 +266,62 @@ public class DrugFragment extends Fragment {
     }
 
     private void queryDB() {
-        String remark = "";
         String now = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).format(formatter);
         String oneDayAgo = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).minusDays(1L).format(formatter);
         String twoDayAgo = LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).minusDays(2L).format(formatter);
+        String beginSql = "SELECT Amount FROM Drug";
         String sql = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + oneDayAgo + "' AND '" + now + "' ORDER BY Timestamp DESC";
 //        String sql2 = "SELECT * FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + twoDayAgo + "' AND '" + oneDayAgo + "' ORDER BY Timestamp DESC";
-        cursor = db.rawQuery(sql, null);
-        if (cursor.moveToFirst()) {
-            //24hr內有吃藥
-            timestamp = cursor.getString(1);
-            amount = cursor.getInt(2);
-            if (cursor.getInt(3) == 1) {
-                sex = true;
-            } else {
-                sex = false;
-            }
-            textView_status.setText("You are at Low Risk");
-            textView_status.setTextColor(Color.GREEN);
-
-            //2小時前才可吃藥
-            if (LocalDateTime.parse(timestamp, formatter).plusDays(1L).minusHours(2L).isBefore(LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).toLocalDateTime())) {
-                textView_amount.setText("1");
-                remark += "Take the drug before UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).format(formatter) + "\n\n";
-            } else {
-                textView_amount.setVisibility(View.INVISIBLE);
-                button_taken.setText("Not yet");
-                button_taken.setEnabled(false);
-                remark += "Next dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).format(formatter) + "\n\n";
-            }
-            remark += "Last dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).format(formatter) + "\n\n";
-            textView_remark.setText(remark);
-            textView_remark.setTextColor(Color.BLUE);
-        } else {
+        cursor = db.rawQuery(beginSql, null);
+        if (!cursor.moveToFirst()) {
             textView_remark.setText("No drug taken within 24 hr.");
-            textView_status.setText("You are not on PrEP");
+            textView_status.setText("You are not on PrEP yet");
             textView_status.setTextColor(Color.RED);
-            textView_amount.setVisibility(View.INVISIBLE);
-            button_taken.setText("Should I take medicine?");
-//            sendNotification();
+            button_eval.setText("Should I take medicine?");
+        } else {
+            cursor = db.rawQuery(sql, null);
+            if (cursor.moveToFirst()) {
+                //24hr內有吃藥
+                timestamp = cursor.getString(1);
+                amount = cursor.getInt(2);
+                if (cursor.getInt(3) == 1) {
+                    remark += "Had sex in the past 24 hr.\n\n";
+                } else if (cursor.getInt(3) == 0) {
+                    remark += "No sex in the past 24 hr.\n\n";
+                }
+                textView_status.setText("You are at Low Risk");
+                textView_status.setTextColor(Color.GREEN);
+
+                //1小時前才可吃藥
+                if (LocalDateTime.parse(timestamp, formatter).plusDays(1L).minusHours(1L).isBefore(LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).toLocalDateTime())) {
+                    button_eval.setVisibility(View.INVISIBLE);
+                    remark += "Come back at " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).minusHours(1L).format(formatter) + "\n\n";
+//                    textView_amount.setText("1");
+//                    remark += "Take the drug before UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).format(formatter) + "\n\n";
+                    remark += "Last dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).format(formatter) + "\n\n";
+                    remark += "Next dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).format(formatter) + "\n\n";
+                    textView_remark.setText(remark);
+                    textView_remark.setTextColor(Color.BLUE);
+                } else if (LocalDateTime.parse(timestamp, formatter).plusDays(1L).plusHours(1L).isAfter(LocalDateTime.now().atZone(ZoneId.of("UTC+08:00")).toLocalDateTime())) {
+//                    button_eval.setVisibility(View.INVISIBLE);
+//                    button_eval.setText("Not yet");
+//                    button_eval.setEnabled(false);
+//                    remark += "Take medicine before " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).plusHours(1L).format(formatter) + "\n\n";
+                    remark += "Last dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).format(formatter) + "\n\n";
+                    remark += "Next dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).plusDays(1L).format(formatter) + "\n\n";
+                    textView_remark.setText(remark);
+                    textView_remark.setTextColor(Color.BLUE);
+                } else {
+                    textView_status.setText("PrEP failed! Contact your Case Manager ASAP !");
+                    textView_status.setTextColor(Color.RED);
+                    button_eval.setVisibility(View.INVISIBLE);
+                    textView_remark.setText("Last dose: UTC+8 " + LocalDateTime.parse(timestamp, formatter).format(formatter));
+                }
+
+            }
         }
+
+
     }
 
     public void sendNotification() {

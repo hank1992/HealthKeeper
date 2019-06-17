@@ -14,7 +14,6 @@ public class MainActivity extends AppCompatActivity {
     private String sharedPrefFile =
             "tw.edu.bmilab.healthkeeper";
     private String gender;
-    private Button buttonNext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

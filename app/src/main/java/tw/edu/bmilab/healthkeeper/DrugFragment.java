@@ -44,7 +44,7 @@ public class DrugFragment extends Fragment {
     private static final String STATUS = "status";
     private static final String AMOUNT = "999";
     private static final String REMARK = "remark";
-    private static final String TIMESTAMP = "drugTimestamp";
+    private static final String TIMESTAMP = "drugTimestamp25H";
 
     // TODO: Rename and change types of parameters
     private String mStatus;
@@ -71,8 +71,8 @@ public class DrugFragment extends Fragment {
     Cursor sexCursor2;
     Cursor sexCursor;
     public SQLdata DH = null;
-    private String drugTimestamp = "";
-    private String sexTimestamp2 = "";
+    private String drugTimestamp25H = "";
+    private String sexTimestamp48H = "";
     private String sexTimestamp = "";
     private int amount = 999;
     private int sex = 2;
@@ -161,8 +161,6 @@ public class DrugFragment extends Fragment {
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int i) {
                                     textView_status.setText("No need to take medicine now");
-                                    textView_amount.setVisibility(View.INVISIBLE);
-                                    button_takeNow.setVisibility(View.INVISIBLE);
                                 }
                             }).show();
                 } else {
@@ -185,7 +183,7 @@ public class DrugFragment extends Fragment {
                                             .setNegativeButton("No", new DialogInterface.OnClickListener() {
                                                 @Override
                                                 public void onClick(DialogInterface dialogInterface, int i) {
-                                                    if (sexTimestamp2.equals("")) {
+                                                    if (sexTimestamp48H.equals("")) {
                                                         textView_status.setText("PrEP end.");
                                                         button_takeNow.setVisibility(View.INVISIBLE);
                                                         textView_remark.setVisibility(View.INVISIBLE);
@@ -204,8 +202,8 @@ public class DrugFragment extends Fragment {
                             .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int i) {
-                                    sex = 1;
                                     add(0, 1);
+                                    queryDB();
                                     updateUI();
                                     new AlertDialog.Builder(getContext())
                                             .setMessage("Sex in the next 24 hours?")
@@ -221,7 +219,7 @@ public class DrugFragment extends Fragment {
                                             .setNegativeButton("No", new DialogInterface.OnClickListener() {
                                                 @Override
                                                 public void onClick(DialogInterface dialogInterface, int i) {
-                                                    textView_status.setText("Take last dose now");
+                                                    textView_status.setText("Take the last dose now");
                                                     button_takeNow.setVisibility(View.VISIBLE);
                                                     textView_amount.setText("1");
                                                     textView_amount.setVisibility(View.VISIBLE);
@@ -308,13 +306,13 @@ public class DrugFragment extends Fragment {
 
     private void queryDB() {
         String now = LocalDateTime.now(ZoneId.of("UTC+08:00")).format(formatter);
-        String oneDayAgo = LocalDateTime.now(ZoneId.of("UTC+08:00")).minusDays(1L).minusHours(1L).format(formatter);
-        String oneDayAgo2 = LocalDateTime.now(ZoneId.of("UTC+08:00")).minusDays(1L).format(formatter);
+        String oneDayAgo1H = LocalDateTime.now(ZoneId.of("UTC+08:00")).minusDays(1L).minusHours(1L).format(formatter);
+        String oneDayAgo = LocalDateTime.now(ZoneId.of("UTC+08:00")).minusDays(1L).format(formatter);
         String twoDayAgo = LocalDateTime.now(ZoneId.of("UTC+08:00")).minusDays(2L).format(formatter);
         String beginSql = "SELECT Amount FROM Drug";
-        String sqlAmount = "SELECT _id, Timestamp, Amount FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + oneDayAgo + "' AND '" + now + "' ORDER BY Timestamp DESC";
-        String sqlSex2 = "SELECT _id, Timestamp, Sex FROM Drug WHERE Sex == 1 AND Timestamp BETWEEN '" + twoDayAgo + "' AND '" + oneDayAgo + "' ORDER BY Timestamp DESC";
-        String sqlSex = "SELECT _id, Timestamp, Sex FROM Drug WHERE Sex == 1 AND Timestamp BETWEEN '" + oneDayAgo + "' AND '" + now + "' ORDER BY Timestamp DESC";
+        String sqlAmount = "SELECT _id, Timestamp, Amount FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + oneDayAgo1H + "' AND '" + now + "' ORDER BY Timestamp DESC";
+        String sqlSex = "SELECT _id, Timestamp, Sex FROM Drug WHERE Sex = 1 AND Timestamp BETWEEN '" + oneDayAgo1H + "' AND '" + now + "' ORDER BY Timestamp DESC";
+        String sqlSex2 = "SELECT _id, Timestamp, Sex FROM Drug WHERE Sex = 1 AND Timestamp BETWEEN '" + twoDayAgo + "' AND '" + now + "' ORDER BY Timestamp DESC";
         beginCursor = db.rawQuery(beginSql, null);
         amountCursor = db.rawQuery(sqlAmount, null);
         sexCursor2 = db.rawQuery(sqlSex2, null);
@@ -328,63 +326,73 @@ public class DrugFragment extends Fragment {
         }
 
         if (amountCursor.moveToFirst()) {
-            drugTimestamp = amountCursor.getString(1);
-        }
-
-        if (sexCursor2.moveToFirst()) {
-            sexTimestamp2 = sexCursor2.getString(1);
+            drugTimestamp25H = amountCursor.getString(1);
         }
 
         if (sexCursor.moveToFirst()) {
             sexTimestamp = sexCursor.getString(1);
         }
+
+        if (sexCursor2.moveToFirst()) {
+            sexTimestamp48H = sexCursor2.getString(1);
+        }
     }
 
     private void updateUI() {
         String remark = "";
-        if (drugTimestamp.equals("")) {
+
+        if (drugTimestamp25H.equals("")) {
+            //25hr沒有吃藥
             remark += "No medicine taken within 25 hr.\n\n";
-            textView_remark.setText(remark);
-            textView_remark.setTextColor(Color.RED);
             if (beginCursor.getCount() > 0) {
                 textView_status.setText("PrEP Failed");
                 textView_status.setTextColor(Color.RED);
                 button_eval.setVisibility(View.INVISIBLE);
                 button_takeNow.setVisibility(View.INVISIBLE);
-                if (!sexTimestamp.equals("")) {
-                    remark += "Had sex within 24hr.\n\n";
+                if (!sexTimestamp48H.equals("")) {
+                    remark += "Had sex within 48hr.\n\n";
                 }
                 remark += "Contact Case Manager ASAP.\n\n";
-                textView_remark.setText(remark);
-                textView_remark.setTextColor(Color.RED);
             }
-        } else if (sexTimestamp.equals("")) {
-            remark += "Last dose: " + LocalDateTime.parse(drugTimestamp, formatter).format(formatter2) + "\n\n";
-            remark += "No sex within 24hr.\n\n";
-            if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).plusHours(1L))) {
-                textView_status.setText("Low Risk");
-                textView_status.setTextColor(Color.GREEN);
-                remark += "Next dose: " + LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).format(formatter2) + "\n\n";
-                textView_remark.setText(remark);
-                textView_remark.setTextColor(Color.BLUE);
-                if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).minusHours(1L))) {
-                    button_eval.setVisibility(View.INVISIBLE);
-                }
+            textView_remark.setText(remark);
+            textView_remark.setTextColor(Color.RED);
+        } else {
+            //25hr有吃藥
+            remark += "Last dose: " + LocalDateTime.parse(drugTimestamp25H, formatter).format(formatter2) + "\n\n";
+//            remark += "No sex within 48hr.\n\n";
+//            if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp25H, formatter).plusDays(1L).plusHours(1L))) {
+            textView_status.setText("Low Risk");
+            textView_status.setTextColor(Color.GREEN);
+            remark += "Next dose: " + LocalDateTime.parse(drugTimestamp25H, formatter).plusDays(1L).format(formatter2) + "\n\n";
+            textView_remark.setText(remark);
+            textView_remark.setTextColor(Color.BLUE);
+            if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp25H, formatter).plusDays(1L).minusHours(1L))) {
+                button_eval.setVisibility(View.INVISIBLE);
             }
-        } else if (sexTimestamp2.equals("") && sexTimestamp.equals("")) {
-            remark += "Last dose (if no sex from now on): " + LocalDateTime.parse(drugTimestamp, formatter).format(formatter2) + "\n\n";
-            remark += "No sex within 48hr.\n\n";
-            if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).plusHours(1L))) {
-                textView_status.setText("Low Risk");
-                textView_status.setTextColor(Color.GREEN);
-                remark += "Next dose (if still have sex): " + LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).format(formatter2) + "\n\n";
-                textView_remark.setText(remark);
-                textView_remark.setTextColor(Color.BLUE);
-                if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).minusHours(1L))) {
-                    button_eval.setVisibility(View.INVISIBLE);
-                }
-            }
+//            }
         }
+
+        if (sexTimestamp48H.equals("")) {
+            remark += "No sex within 48hr\n\n";
+            textView_remark.setText(remark);
+        }else{
+            remark += "Had sex within 48hr\n\n";
+            textView_remark.setText(remark);
+        }
+//        else if (sexTimestamp48H.equals("") && sexTimestamp.equals("")) {
+//            remark += "Last dose (if no sex from now on): " + LocalDateTime.parse(drugTimestamp25H, formatter).format(formatter2) + "\n\n";
+//            remark += "No sex within 48hr.\n\n";
+//            if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp25H, formatter).plusDays(1L).plusHours(1L))) {
+//                textView_status.setText("Low Risk");
+//                textView_status.setTextColor(Color.GREEN);
+//                remark += "Next dose (if still have sex): " + LocalDateTime.parse(drugTimestamp25H, formatter).plusDays(1L).format(formatter2) + "\n\n";
+//                textView_remark.setText(remark);
+//                textView_remark.setTextColor(Color.BLUE);
+//                if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp25H, formatter).plusDays(1L).minusHours(1L))) {
+//                    button_eval.setVisibility(View.INVISIBLE);
+//                }
+//            }
+//        }
     }
 
     private void deleteAll() {

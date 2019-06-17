@@ -52,6 +52,9 @@ public class ProfileActivity extends AppCompatActivity {
         spinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
             public void onItemSelected(AdapterView adapterView, View view, int position, long id) {
                 gender = adapterView.getSelectedItem().toString();
+                if (gender.equals("Female")) {
+                    Toast.makeText(getApplicationContext(), "On demand PrEP not available for female", Toast.LENGTH_LONG).show();
+                }
             }
 
             public void onNothingSelected(AdapterView arg0) {

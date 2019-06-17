@@ -185,11 +185,18 @@ public class DrugFragment extends Fragment {
                                             .setNegativeButton("No", new DialogInterface.OnClickListener() {
                                                 @Override
                                                 public void onClick(DialogInterface dialogInterface, int i) {
-                                                    textView_status.setText("PrEP end.");
-                                                    button_takeNow.setVisibility(View.INVISIBLE);
-                                                    textView_remark.setVisibility(View.INVISIBLE);
-                                                    button_eval.setVisibility(View.INVISIBLE);
-                                                    deleteAll();
+                                                    if (sexTimestamp2.equals("")) {
+                                                        textView_status.setText("PrEP end.");
+                                                        button_takeNow.setVisibility(View.INVISIBLE);
+                                                        textView_remark.setVisibility(View.INVISIBLE);
+                                                        button_eval.setVisibility(View.INVISIBLE);
+                                                        deleteAll();
+                                                    } else {
+                                                        textView_status.setText("Take medicine now.");
+                                                        textView_amount.setText("1");
+                                                        textView_amount.setVisibility(View.VISIBLE);
+                                                        button_takeNow.setVisibility(View.VISIBLE);
+                                                    }
                                                 }
                                             }).show();
                                 }
@@ -199,6 +206,7 @@ public class DrugFragment extends Fragment {
                                 public void onClick(DialogInterface dialogInterface, int i) {
                                     sex = 1;
                                     add(0, 1);
+                                    updateUI();
                                     new AlertDialog.Builder(getContext())
                                             .setMessage("Sex in the next 24 hours?")
                                             .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -221,7 +229,7 @@ public class DrugFragment extends Fragment {
                                             }).show();
                                 }
                             }).show();
-                    updateUI();
+//                    updateUI();
                 }
             }
         });

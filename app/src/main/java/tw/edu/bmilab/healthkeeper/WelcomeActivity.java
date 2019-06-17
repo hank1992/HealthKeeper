@@ -2,6 +2,7 @@ package tw.edu.bmilab.healthkeeper;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -68,6 +69,8 @@ public class WelcomeActivity extends AppCompatActivity implements NavigationView
 
             case R.id.nav_hospital:
                 getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new MapFragment()).commit();
+//                Intent intent = new Intent(this, MapsActivity.class);
+//                startActivity(intent);
                 break;
 
             case R.id.nav_tools:

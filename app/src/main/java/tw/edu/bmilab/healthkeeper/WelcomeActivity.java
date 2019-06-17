@@ -73,6 +73,10 @@ public class WelcomeActivity extends AppCompatActivity implements NavigationView
             case R.id.nav_tools:
                 getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new SettingFragment()).commit();
                 break;
+
+            case R.id.nav_intro:
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new IntroFragment()).commit();
+                break;
         }
         drawer.closeDrawer(GravityCompat.START);
         return true;

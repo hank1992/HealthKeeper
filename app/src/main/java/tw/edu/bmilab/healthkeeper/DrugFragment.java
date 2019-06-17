@@ -68,9 +68,11 @@ public class DrugFragment extends Fragment {
     ContentValues values;
     Cursor beginCursor;
     Cursor amountCursor;
+    Cursor sexCursor2;
     Cursor sexCursor;
     public SQLdata DH = null;
     private String drugTimestamp = "";
+    private String sexTimestamp2 = "";
     private String sexTimestamp = "";
     private int amount = 999;
     private int sex = 2;
@@ -219,6 +221,7 @@ public class DrugFragment extends Fragment {
                                             }).show();
                                 }
                             }).show();
+                    updateUI();
                 }
             }
         });
@@ -298,12 +301,17 @@ public class DrugFragment extends Fragment {
     private void queryDB() {
         String now = LocalDateTime.now(ZoneId.of("UTC+08:00")).format(formatter);
         String oneDayAgo = LocalDateTime.now(ZoneId.of("UTC+08:00")).minusDays(1L).minusHours(1L).format(formatter);
+        String oneDayAgo2 = LocalDateTime.now(ZoneId.of("UTC+08:00")).minusDays(1L).format(formatter);
+        String twoDayAgo = LocalDateTime.now(ZoneId.of("UTC+08:00")).minusDays(2L).format(formatter);
         String beginSql = "SELECT Amount FROM Drug";
         String sqlAmount = "SELECT _id, Timestamp, Amount FROM Drug WHERE Amount > 0 AND Timestamp BETWEEN '" + oneDayAgo + "' AND '" + now + "' ORDER BY Timestamp DESC";
+        String sqlSex2 = "SELECT _id, Timestamp, Sex FROM Drug WHERE Sex == 1 AND Timestamp BETWEEN '" + twoDayAgo + "' AND '" + oneDayAgo + "' ORDER BY Timestamp DESC";
         String sqlSex = "SELECT _id, Timestamp, Sex FROM Drug WHERE Sex == 1 AND Timestamp BETWEEN '" + oneDayAgo + "' AND '" + now + "' ORDER BY Timestamp DESC";
         beginCursor = db.rawQuery(beginSql, null);
         amountCursor = db.rawQuery(sqlAmount, null);
+        sexCursor2 = db.rawQuery(sqlSex2, null);
         sexCursor = db.rawQuery(sqlSex, null);
+
         if (!beginCursor.moveToFirst()) {
             textView_remark.setText("No drug taken ever.");
             textView_status.setText("You are not on PrEP yet");
@@ -315,6 +323,10 @@ public class DrugFragment extends Fragment {
             drugTimestamp = amountCursor.getString(1);
         }
 
+        if (sexCursor2.moveToFirst()) {
+            sexTimestamp2 = sexCursor2.getString(1);
+        }
+
         if (sexCursor.moveToFirst()) {
             sexTimestamp = sexCursor.getString(1);
         }
@@ -323,7 +335,7 @@ public class DrugFragment extends Fragment {
     private void updateUI() {
         String remark = "";
         if (drugTimestamp.equals("")) {
-            remark += "No drug taken within 24 hr.\n\n";
+            remark += "No medicine taken within 25 hr.\n\n";
             textView_remark.setText(remark);
             textView_remark.setTextColor(Color.RED);
             if (beginCursor.getCount() > 0) {
@@ -338,15 +350,26 @@ public class DrugFragment extends Fragment {
                 textView_remark.setText(remark);
                 textView_remark.setTextColor(Color.RED);
             }
-        } else {
+        } else if (sexTimestamp.equals("")) {
             remark += "Last dose: " + LocalDateTime.parse(drugTimestamp, formatter).format(formatter2) + "\n\n";
-            if (!sexTimestamp.equals("")) {
-                remark += "Had sex within 24hr.\n\n";
-            }
+            remark += "No sex within 24hr.\n\n";
             if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).plusHours(1L))) {
                 textView_status.setText("Low Risk");
                 textView_status.setTextColor(Color.GREEN);
                 remark += "Next dose: " + LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).format(formatter2) + "\n\n";
+                textView_remark.setText(remark);
+                textView_remark.setTextColor(Color.BLUE);
+                if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).minusHours(1L))) {
+                    button_eval.setVisibility(View.INVISIBLE);
+                }
+            }
+        } else if (sexTimestamp2.equals("") && sexTimestamp.equals("")) {
+            remark += "Last dose (if no sex from now on): " + LocalDateTime.parse(drugTimestamp, formatter).format(formatter2) + "\n\n";
+            remark += "No sex within 48hr.\n\n";
+            if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).plusHours(1L))) {
+                textView_status.setText("Low Risk");
+                textView_status.setTextColor(Color.GREEN);
+                remark += "Next dose (if still have sex): " + LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).format(formatter2) + "\n\n";
                 textView_remark.setText(remark);
                 textView_remark.setTextColor(Color.BLUE);
                 if (LocalDateTime.now(ZoneId.of("UTC+08:00")).isBefore(LocalDateTime.parse(drugTimestamp, formatter).plusDays(1L).minusHours(1L))) {

@@ -5,10 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
@@ -71,8 +68,15 @@ public class MainActivity extends AppCompatActivity {
         new DatePickerDialog(v.getContext(), new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int day) {
-                String dateTime = String.valueOf(year) + "-" + String.valueOf(month) + "-" + String.valueOf(day);
+                String dateTime = String.valueOf(year) + "-" + String.valueOf(month + 1) + "-" + String.valueOf(day);
                 DOB.setText(dateTime);
+                Calendar userCalendar = Calendar.getInstance();
+                userCalendar.set(year, month, day);
+                Calendar eighteenYearAgr = Calendar.getInstance();
+                eighteenYearAgr.add(Calendar.YEAR, -18);
+                if (eighteenYearAgr.before(userCalendar)) {
+                    Toast.makeText(view.getContext(), "Truvada not recommended for under 18", Toast.LENGTH_LONG).show();
+                }
             }
 
         }, year, month, day).show();
@@ -89,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
         if (weight.getText().toString().equals("")) {
             errCol += "Please enter Weight\n";
         }
+
         SharedPreferences.Editor preferencesEditor = mPreferences.edit();
         if (errCol.equals("")) {
             preferencesEditor.putString("gender", gender);

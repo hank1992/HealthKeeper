@@ -2,33 +2,18 @@ package tw.edu.bmilab.healthkeeper;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.ContentValues;
-import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 
 public class WelcomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private DrawerLayout drawer;
@@ -80,15 +65,17 @@ public class WelcomeActivity extends AppCompatActivity implements NavigationView
             case R.id.nav_drug:
                 getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new DrugFragment()).commit();
                 break;
+
+            case R.id.nav_hospital:
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new MapFragment()).commit();
+                break;
+
+            case R.id.nav_tools:
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new SettingFragment()).commit();
+                break;
         }
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-
-    public void sendNotification() {
-        NotificationCompat.Builder notifyBuilder = getNotificationBuilder();
-        mNotifyManager.notify(NOTIFICATION_ID, notifyBuilder.build());
     }
 
     public void createNotificationChannel() {
@@ -108,20 +95,20 @@ public class WelcomeActivity extends AppCompatActivity implements NavigationView
         }
     }
 
-    private NotificationCompat.Builder getNotificationBuilder() {
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent notificationPendingIntent = PendingIntent.getActivity(this,
-                NOTIFICATION_ID, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        NotificationCompat.Builder notifyBuilder = new NotificationCompat.Builder(this, PRIMARY_CHANNEL_ID)
-                .setContentTitle("It's time")
-                .setContentText("Time to take drug")
-                .setSmallIcon(R.drawable.ic_stat_name)
-                .setContentIntent(notificationPendingIntent)
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setDefaults(NotificationCompat.DEFAULT_ALL);
-        return notifyBuilder;
-    }
+//    private NotificationCompat.Builder getNotificationBuilder() {
+//        Intent notificationIntent = new Intent(this, MainActivity.class);
+//        PendingIntent notificationPendingIntent = PendingIntent.getActivity(this,
+//                NOTIFICATION_ID, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+//        NotificationCompat.Builder notifyBuilder = new NotificationCompat.Builder(this, PRIMARY_CHANNEL_ID)
+//                .setContentTitle("It's time")
+//                .setContentText("Time to take drug")
+//                .setSmallIcon(R.drawable.ic_stat_name)
+//                .setContentIntent(notificationPendingIntent)
+//                .setAutoCancel(true)
+//                .setPriority(NotificationCompat.PRIORITY_HIGH)
+//                .setDefaults(NotificationCompat.DEFAULT_ALL);
+//        return notifyBuilder;
+//    }
 
     private static final int TIME_INTERVAL = 2000; // # milliseconds, desired time passed between two back presses.
     private long mBackPressed;

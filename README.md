@@ -16,12 +16,6 @@ https://play.google.com/store/apps/details?id=tw.edu.bmilab.healthkeeper
 * PendingIntent
 ```
 
-#### contributions of each team member
-```
-* Hank 100%
-* Yiyi 100%
-```
-
 #### demo video link
 
 #### screenshots

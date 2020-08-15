@@ -16,9 +16,9 @@ https://play.google.com/store/apps/details?id=tw.edu.bmilab.healthkeeper
 * PendingIntent
 ```
 
-#### demo video link
-
 #### screenshots
+<img src="Screenshots/1.png" width="540" height="1030">
+
 ![Screenshots/1.png](Screenshots/1.png){:height="30%" width="30%"}
 ![Screenshots/2.png](Screenshots/2.png){:height="30%" width="30%"}
 ![Screenshots/3.png](Screenshots/3.png){:height="30%" width="30%"}

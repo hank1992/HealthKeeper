@@ -19,7 +19,7 @@ https://play.google.com/store/apps/details?id=tw.edu.bmilab.healthkeeper
 #### demo video link
 
 #### screenshots
-![Screenshots/1.png](Screenshots/1.png)
+![Screenshots/1.png](Screenshots/1.png | )
 ![Screenshots/2.png](Screenshots/2.png)
 ![Screenshots/3.png](Screenshots/3.png)
 ![Screenshots/4.png](Screenshots/4.png)
